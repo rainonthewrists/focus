@@ -43,7 +43,7 @@ let isExplodingAgain = false;
 let explodeStartTime = 0;
 
 function setup() {
-  createCanvas(1024, 768);
+  createCanvas(1280, 720);
   initializeWebcamAndHandTracker();
   pixelDensity(1);
   frameRate(30);
@@ -147,8 +147,8 @@ function updateNoiseRadius() {
 function initializeWebcamAndHandTracker() {
   let constraints = {
     video: {
-      width: { ideal: 1024 },
-      height: { ideal: 768 },
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
       facingMode: "user"
     }
   };
