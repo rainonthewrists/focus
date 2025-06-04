@@ -3,6 +3,17 @@ let myHandTracker;
 let hands = [];
 let trackerOptions = { maxHands: 1, flipHorizontal: true }; // Можно задать больше рук
 let webcamAlpha = 255;
+const phrases = [
+  "You can feel it, It waits, curled in the curve of your hand, between the sinew of gesture and the spasm of memory, where history decays into syntax.",
+  "It waits, curled in the curve of your hand, between the sinew of gesture and the spasm of memory, where history decays into syntax.",
+  "Let it linger — a weightless object with the heaviness of meaning it has not yet assumed. It is a possibility, not a fact.",
+  "So how long? As long as the hush before the first note. As long as the glint in the eye before the tear.",
+  "Hold it too tightly, and ink melts into skin. Let it go too soon, and it is only wind. A word — a firefly before the dawn, glowing, vanishing, glowing again.",
+  "But sooner or later the current of meaning pulls, and your fingertips, blessed with longing, must release what never belonged to them entirely.",
+  "The word becomes a traveler without maps, wandering the alleys of its own invention, each echo a reminder of a language it once believed in.",
+  "It’s not loss, but a kind of becoming — when the thing you held so gently no longer needs your hands, when it falls from you like a petal in wind.",
+  "And so, like all possibilities, it is more beautiful than anything real. Don’t say it. Don’t even think it fully."
+];
 
 let currentPhraseIndex = 0;
 let txtSp;
