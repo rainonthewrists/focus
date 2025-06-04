@@ -4,15 +4,16 @@ let hands = [];
 let trackerOptions = { maxHands: 1, flipHorizontal: true }; // Можно задать больше рук
 let webcamAlpha = 255;
 const phrases = [
-  "You can feel it, It waits, curled in the curve of your hand, between the sinew of gesture and the spasm of memory, where history decays into syntax.",
-  "It waits, curled in the curve of your hand, between the sinew of gesture and the spasm of memory, where history decays into syntax.",
-  "Let it linger — a weightless object with the heaviness of meaning it has not yet assumed. It is a possibility, not a fact.",
-  "So how long? As long as the hush before the first note. As long as the glint in the eye before the tear.",
-  "Hold it too tightly, and ink melts into skin. Let it go too soon, and it is only wind. A word — a firefly before the dawn, glowing, vanishing, glowing again.",
-  "But sooner or later the current of meaning pulls, and your fingertips, blessed with longing, must release what never belonged to them entirely.",
-  "The word becomes a traveler without maps, wandering the alleys of its own invention, each echo a reminder of a language it once believed in.",
-  "It’s not loss, but a kind of becoming — when the thing you held so gently no longer needs your hands, when it falls from you like a petal in wind.",
-  "And so, like all possibilities, it is more beautiful than anything real. Don’t say it. Don’t even think it fully."
+  "The lightest thoughts cast the longest shadows — you trace their edges, wondering where substance ends and longing begins.",  
+  "Attention is the art of kneeling before the ordinary until it reveals its sacred geometry.",  
+  "A moment fully seen is like a petal held to the sun — suddenly translucent, veined with hidden light.",  
+  "To focus is to fall in love with a fragment of the world, and for that fragment to love you back.",  
+  "The mind is a garden where every act of noticing plants a seed — some bloom, others grow roots too deep to uproot.",  
+  "Silence between two words is where meaning pools — drink from there, not from the noise.",  
+  "You try to hold the present, but it’s like cradling moonlight — the tighter your grasp, the more it slips through your fingers.",  
+  "True clarity is soft — it doesn’t split the world into pieces, but wraps around it like morning mist.",  
+  "Some truths are too delicate to speak aloud; they exist only in the pause before you blink.",  
+  "Beauty is what happens when you stop looking for it — a shy creature stepping into your peripheral vision."  
 ];
 
 let currentPhraseIndex = 0;
