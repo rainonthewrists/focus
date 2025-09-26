@@ -44,7 +44,7 @@ let isExplodingAgain = false;
 let explodeStartTime = 0;
 
 function setup() {
-  createCanvas(1280, 720);
+  createCanvas(1024, 768);
   initializeWebcamAndHandTracker();
   pixelDensity(1);
   frameRate(30);
