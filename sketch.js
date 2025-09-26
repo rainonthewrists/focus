@@ -1,7 +1,7 @@
 let myWebcam;
 let myHandTracker;
 let hands = [];
-let trackerOptions = { maxHands: 1, flipHorizontal: true }; // Можно задать больше рук
+let trackerOptions = { maxHands: 2, flipHorizontal: true }; // Можно задать больше рук
 let webcamAlpha = 255;
 const phrases = [
   "The lightest thoughts cast the longest shadows — you trace their edges, wondering where substance ends and longing begins.",  
