@@ -1,64 +1,218 @@
 let myWebcam;
 let myHandTracker;
 let hands = [];
-let trackerOptions = { maxHands: 2, flipHorizontal: true }; // Можно задать больше рук
+let trackerOptions = { maxHands: 1, flipHorizontal: true };
 let webcamAlpha = 255;
-const phrases = [
-  "The lightest thoughts cast the longest shadows — you trace their edges, wondering where substance ends and longing begins.",  
-  "Attention is the art of kneeling before the ordinary until it reveals its sacred geometry.",  
-  "A moment fully seen is like a petal held to the sun — suddenly translucent, veined with hidden light.",  
-  "To focus is to fall in love with a fragment of the world, and for that fragment to love you back.",  
-  "The mind is a garden where every act of noticing plants a seed — some bloom, others grow roots too deep to uproot.",  
-  "Silence between two words is where meaning pools — drink from there, not from the noise.",  
-  "You try to hold the present, but it’s like cradling moonlight — the tighter your grasp, the more it slips through your fingers.",  
-  "True clarity is soft — it doesn’t split the world into pieces, but wraps around it like morning mist.",  
-  "Some truths are too delicate to speak aloud; they exist only in the pause before you blink.",  
-  "Beauty is what happens when you stop looking for it — a shy creature stepping into your peripheral vision."  
-];
 
 let currentPhraseIndex = 0;
 let txtSp;
-const spdLimit = 50; // Настроить, было 150
+const spdLimit = 70; // Настроить
 
 let spiralRingStep = 20;
 let letterSpacing = 0;
-let spiralSpaceShift = 18; // Смещение расстояния между символами в спирали
-let startRadius = 20;// Начальный радиус спирали
-let startAngle = 0; // Начальный угол спирали
-let borderDistance = -5; // Граница, за которой текст не будет рисоваться
+let spiralSpaceShift = 18;
+let startRadius = 20;
+let startAngle = 0;
+let borderDistance = -10;
 let noiseStartRadius = 0;
-let noiseStartRadiusTarget = 300; // Целевой радиус
+let noiseStartRadiusTarget = 300;
 let startTime;
 let midX, midY;
 let currentMidX, currentMidY;
 let isBlue = false;
 let wasBlue = false;
 
-// Новые переменные для управления сменой текста
 let isChangingText = false;
 let textChangeTimer = 0;
-const changeDelay = 0; // Задержка между сменами символов (мс)
-const charsPerChange = 500; // Сколько символов менять за один шаг
+const changeDelay = 0;
+const charsPerChange = 500;
 
 let isExplodingAgain = false;
 let explodeStartTime = 0;
 
-function setup() {
-  createCanvas(1024, 768);
-  initializeWebcamAndHandTracker();
-  pixelDensity(1);
-  frameRate(30);
-  textFont('Arial', 30); // Размер шрифта
+let phrases = [];
+let fallbackPhrases = [
+  "Attention is the slow art of becoming porous, letting the world's small details pass through without resistance.",
+  "You realize, at last, that attention is not a tool but a tenderness, a way of being touched back by what you thought you were only looking at.",
+  "True focus is a form of love, an offering of your own light so that the ordinary might finally see itself.",
+  "Focus is not about holding tighter, but about being still enough for the word to rest upon you.",
+  "Perhaps to hold a word at your fingertips is not to control it, but to let it tremble there, between motion and stillness, between knowing and unknowing.",
+  "Each syllable carries its own gravity, and you hover above it, trying not to fall entirely in.",
+  "So what dissolves here is the duality between subject and object, speaker and spoken, the perceiver and the perceived.",
+  "To focus is to be suspended between two silences: the one before the thought, and the one after it leaves you.",
+  "Attention is the gentlest form of alchemy.",
+  "The space between attention and its object is not empty, but strung with the invisible harp-strings of relation, and to focus is to hear them hum.",
+  "Words are nervous creatures — they shy away from the weight of touch, and you can cradle them only for a moment before they turn back into air.",
+  "There is a kind of grace in that — in knowing that nothing truly belongs to you, not even the language you speak.",
+  "It is the point where perception turns into participation, and the fingertip, once a border, becomes a threshold.",
+  "Perhaps holding a word is not the task at all, perhaps the grace is in letting it hover, weightless, until it chooses to land again.",
+  "The world writes itself through you — you only think you are the one tracing the line.",
+  "To focus is to build a small shelter in time, a place where thought can breathe.",
+  "To truly see a thing is to un-name it.",
+  "Sometimes you hold a single word so long it begins to lose meaning — light, breath, distance — until it becomes a sound, a vibration, a hum.",
+  "A word arrives not to be kept but to pass through you.",
+  "Time gathers in the curve of a letter.",
+  "Sometimes you let it go, and feel the afterglow linger — the faintest tingle where language once was.",
+  "How long can you hold a meaning?",
+  "Each word carries the weight of what it leaves unsaid.",
+  "You hold it too long, and it softens, melts, leaving a sense of thought on your fingertips.",
+  "To hold a word is to touch breath made visible, warm and fragile, already turning to air.",
+  "A word is a small eternity trying on the shape of sound, and the moment you name it, it begins to decay.",
+  "To hold a thought still is to invite its reflection, and reflection always bends the light a little differently.",
+  "Holding language is like trying to weigh light — every definition scatters what it sought to measure.",
+  "The letters soften and lean toward your hand, as if to thank it for believing in their fragile gravity.",
+  "Feel the word warming the air between your fingers."
+];
 
-  let initialText = phrases[0]
-  txtSp = new SpiralText(width / 2, height / 2, initialText, spiralRingStep, letterSpacing, spiralSpaceShift, startRadius, startAngle, borderDistance);
+// Загрузка
+
+let modelLoaded = false;
+let phrasesGenerated = false;
+let webcamLoaded = false;
+let loadingMessage = "Loading...";
+
+let isGeneratingPhrases = false;
+
+// Генерация Mistral API
+
+async function generatePoeticPhrases() {
+  if (isGeneratingPhrases) return;
+  isGeneratingPhrases = true;
+
+  const apiKey = "3pqdV38WnPZ75Qo0aqhIKdDH4bpsSNV3";
+  const apiUrl = "https://api.mistral.ai/v1/chat/completions";
+  const promptText = "Prose yet lyrical short reflection in English, meditative metaphorical fragment on focus, perception and language inspired by the question 'How long can you hold a word at your fingertips?'. Use second-person narration and long sentences. No explanations.";
+
+  const requestOptions = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+      "Accept": "application/json"
+    },
+    body: JSON.stringify({
+      model: "open-mistral-nemo",
+      messages: [{ role: "user", content: promptText }],
+			max_tokens: 300,
+      temperature: 0.6
+    })
+  };
+
+  const controller = new AbortController(); // Таймаут с AbortController
+  const timeoutMs = 5000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  requestOptions.signal = controller.signal;
+
+  try {
+    const response = await fetch(apiUrl, requestOptions);
+    clearTimeout(timeoutId);
+
+    if (!response || !response.ok) {
+      console.warn("API response not ok, using fallback.");
+      addFallbackPhrases();
+      return;
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content?.trim() || "";
+
+    let isInvalid = false;
+    if (text.length < 50) { // Длина текста
+      isInvalid = true;
+    } else if (/\d+\./.test(text)) {
+      isInvalid = true;
+    } else if (/[*+\/=@\[\]\\^_`{|}~<>#%&\n]/.test(text)) { // Странное форматирование
+      isInvalid = true;
+    }
+
+    if (isInvalid) {
+      console.warn("API response invalid, using fallback.");
+      addFallbackPhrases();
+      return;
+    }
+
+    const sentences = text
+      .replace(/\n+/g, ' ') // Абзацы
+			.match(/.*?[.!?](?=\s*[A-Z]|$)/g) || [] // Предложения
+      .map(sentence => sentence.trim())
+      .filter(sentence => sentence.length > 10 && sentence.length < 250);
+
+    if (sentences.length > 0) {
+      phrases.push(...sentences);
+      phrasesGenerated = true;
+      console.log("AI phrases loaded:", sentences);
+    } else {
+      console.warn("API returned no phrases, using fallback.");
+      addFallbackPhrases();
+    }
+  } catch (err) {
+		clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      console.warn("Fetch aborted by timeout, using fallback.");
+    } else {
+      console.error("Fetch error:", err);
+    }
+    addFallbackPhrases();
+  } finally {
+    isGeneratingPhrases = false;
+  }
+}
+
+function addFallbackPhrases() {
+  console.log("Using fallback phrases.");
+  phrases.push(...fallbackPhrases);
+  phrasesGenerated = true;
+}
+
+// Запуск
+
+function preload() {
+  generatePoeticPhrases(); // Генерация фраз
+
+  myHandTracker = ml5.handPose(trackerOptions, () => {
+    modelLoaded = true;
+    console.log("HandPose model loaded");
+    initializeWebcamAndHandTracker();
+  });
+  setTimeout(() => {
+    if (!modelLoaded) {
+      console.warn("HandPose model failed to load");
+      loadingMessage = "Loading failed, please refresh.";
+    }
+  }, 30000); // Таймаут
+}
+
+function drawLoadingScreen() {
+  background(255);
+  textAlign(CENTER, CENTER);
+  fill(0);
+  textSize(30);
+  text(loadingMessage, width / 2, height / 2);
+}
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  textFont('Arial');
+  frameRate(30);
+
+  // Начальный экран загрузки
+  drawLoadingScreen();
 
   currentMidX = width / 2;
   currentMidY = height / 2;
 }
 
 function draw() {
-  background(255);
+  if (!modelLoaded || !phrasesGenerated || !webcamLoaded) {
+    drawLoadingScreen();
+    return;
+  }
+
+  if (!txtSp) {
+    let initialText = getNextPhrase();
+    txtSp = new SpiralText(width / 2, height / 2, initialText, spiralRingStep, letterSpacing, spiralSpaceShift, startRadius, startAngle, borderDistance);
+  }
+
   drawWebcamVideo();
 
   isBlue = false;
@@ -84,26 +238,65 @@ function draw() {
   txtSp.draw();
 }
 
+// Повторное наполнение массива
+
+function getNextPhrase() {
+  if (phrases.length < 2 && !isGeneratingPhrases) { // Когда осталась одна фраза
+		console.log("Refilling phrases...");
+    generatePoeticPhrases();
+  }
+
+  if (phrases.length === 0) addFallbackPhrases(); // До этого не должно дойти
+
+  const next = phrases.splice(floor(random(phrases.length)), 1)[0];
+  return next;
+}
+
+function startTextChange() {
+  let newText = getNextPhrase();
+  isChangingText = true;
+  txtSp.startTextChange(newText);
+  textChangeTimer = millis();
+  startTime = millis();
+}
+
+function changeNextChars() {
+  if (txtSp.changeNextChars(charsPerChange)) {
+    isChangingText = false;
+  }
+}
+
+// Без изменений
+
 function updateHandPosition() {
   if (hands.length > 0) {
-    for (let i = 0; i < hands.length; i++) {
-      let hand = hands[i];
+    let ratio = myWebcam.width && myWebcam.height ? max(width / myWebcam.width, height / myWebcam.height) : 1;
+    let xOffset = (width - myWebcam.width * ratio) / 2;
+    let yOffset = (height - myWebcam.height * ratio) / 2;
+
+    for (let hand of hands) {
       let thumbTip = hand.keypoints[4];
       let indexTip = hand.keypoints[8];
 
       if (thumbTip && indexTip) {
+        let tx = thumbTip.x * ratio + xOffset;
+        let ty = thumbTip.y * ratio + yOffset;
+        let ix = indexTip.x * ratio + xOffset;
+        let iy = indexTip.y * ratio + yOffset;
+
         fill(0, 255, 0);
         noStroke();
-        ellipse(thumbTip.x, thumbTip.y, 5, 5);
-        ellipse(indexTip.x, indexTip.y, 5, 5);
-        
-        midX = (thumbTip.x + indexTip.x) / 2;
-        midY = (thumbTip.y + indexTip.y) / 2;
-        let distance = dist(thumbTip.x, thumbTip.y, indexTip.x, indexTip.y);
-        
-        isBlue = distance < 50;
-        fill(isBlue ? 0 : 255, 0, isBlue ? 255 : 0);
-        ellipse(midX, midY, 10, 10);
+        ellipse(tx, ty, 8, 8);
+        ellipse(ix, iy, 8, 8);
+
+        midX = (tx + ix) / 2;
+        midY = (ty + iy) / 2;
+
+        let distance = dist(tx, ty, ix, iy);
+        isBlue = distance < 80;
+
+        fill(isBlue ? color(0, 0, 255) : color(255, 0, 0));
+        ellipse(midX, midY, 12, 12);
       }
     }
   }
@@ -114,23 +307,6 @@ function checkPinchState() {
     startExplosionFromCenter();
   }
   wasBlue = isBlue;
-}
-
-function startTextChange() {
-  currentPhraseIndex = (currentPhraseIndex + 1) % phrases.length;
-  let newText = phrases[currentPhraseIndex]; // Убираем дублирование фразы
-
-  isChangingText = true;
-  txtSp.startTextChange(newText);
-  textChangeTimer = millis();
-  startTime = millis();
-}
-
-function changeNextChars() {
-  if (txtSp.changeNextChars(charsPerChange)) {
-    // Если смена текста завершена
-    isChangingText = false;
-  }
 }
 
 function updateNoiseRadius() {
@@ -146,33 +322,34 @@ function updateNoiseRadius() {
 }
 
 function initializeWebcamAndHandTracker() {
-  let constraints = {
-    video: {
-      width: { ideal: 1024 },
-      height: { ideal: 768 },
-      facingMode: "user"
-    }
-  };
-  myWebcam = createCapture(VIDEO, constraints, function() {
-    console.log("Установленное разрешение:", myWebcam.width, myWebcam.height);
+  navigator.mediaDevices.getUserMedia({ video: true }).then(() => {
+    myWebcam = createCapture(VIDEO);
+    myWebcam.hide();
+    myHandTracker.detectStart(myWebcam, gotHands);
+    webcamLoaded = true;
+  }).catch(err => {
+    console.error("Camera access failed:", err);
+    loadingMessage = "Please allow camera access and refresh the page.";
   });
-  myWebcam.hide();
-  myHandTracker.detectStart(myWebcam, gotHands);
 }
 
 function drawWebcamVideo() {
+  if (!webcamLoaded) return;
   push();
   if (trackerOptions.flipHorizontal) {
-    translate(myWebcam.width, 0);
+    translate(width, 0);
     scale(-1, 1);
   }
+  let ratio = myWebcam.width && myWebcam.height ? max(width / myWebcam.width, height / myWebcam.height) : 1;
   tint(255, 255, 255, webcamAlpha);
-  image(myWebcam, 0, 0, myWebcam.width, myWebcam.height);
+  image(
+    myWebcam,
+    (width - myWebcam.width * ratio) / 2,
+    (height - myWebcam.height * ratio) / 2,
+    myWebcam.width * ratio,
+    myWebcam.height * ratio
+  );
   pop();
-}
-
-function preload() {
-  myHandTracker = ml5.handPose(trackerOptions);
 }
 
 function gotHands(results) {
@@ -186,16 +363,10 @@ function startExplosionFromCenter() {
   for (let i in txtSp.particles) {
     let p = txtSp.particles[i];
     p.pos = createVector(txtSp.xPos, txtSp.yPos);
-    
-    // Рассчитываем угол и расстояние для спирали
     let angle = (i / txtSp.particles.length) * TWO_PI * 5;
     let spiralForce = 0.1 * (i % 10 + 1);
-    
-    // Комбинируем радиальное и тангенциальное ускорение
     let radial = p5.Vector.random2D().mult(random(1, 4));
-    let tangent = p5.Vector.fromAngle(angle + HALF_PI)
-                   .mult(spiralForce * random(1, 3));
-    
+    let tangent = p5.Vector.fromAngle(angle + HALF_PI).mult(spiralForce * random(1, 3));
     p.spd = radial.add(tangent);
   }
 
@@ -229,7 +400,6 @@ class SpiralText {
   }
 
   startTextChange(newText) {
-    // Удаляем частицы для символов, которые больше не нужны
     for (let i = newText.length; i < this.spiralText.length; i++) {
       delete this.particles[i];
     }
@@ -266,10 +436,8 @@ class SpiralText {
       changed++;
     }
 
-    // Обрезаем массив если новый текст короче
     if (this.currentChangeIndex >= this.targetText.length) {
       newTextArr = newTextArr.slice(0, this.targetText.length);
-      // Удаляем оставшиеся частицы
       Object.keys(this.particles).forEach(key => {
         if (Number(key) >= this.targetText.length) {
           delete this.particles[key];
@@ -324,11 +492,11 @@ class SpiralText {
 class Particle {
   constructor(letter, pos) {
     this.pos = pos.copy();
-    this.spd = createVector(random(-0.01, 0.01), random(-0.01, 0.01)); // Случайная начальная скорость
+    this.spd = createVector(random(-0.01, 0.01), random(-0.01, 0.01));
     this.acc = createVector();
     this.letter = letter;
     this.targetLetter = letter;
-    this.turnFactor = random(20, 30); // Коэффициент "плавности" поворота
+    this.turnFactor = random(20, 30);
     this.targetPos = pos.copy();
     this.size = 30;
     this.targetSize = 30;
@@ -336,7 +504,7 @@ class Particle {
 
   setLetter(newLetter) {
     this.targetLetter = newLetter;
-    this.letter = newLetter; // Меняем символ сразу
+    this.letter = newLetter;
   }
 
   update(attractor) {
@@ -355,4 +523,8 @@ class Particle {
     textAlign(CENTER, CENTER);
     text(this.letter, this.pos.x, this.pos.y);
   }
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
