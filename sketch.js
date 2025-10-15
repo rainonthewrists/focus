@@ -133,7 +133,7 @@ async function generatePoeticPhrases() {
 
     const sentences = text
       .replace(/\n+/g, ' ') // Абзацы
-			.match(/.*?[.!?](?=\s*[A-Z]|$)/g) || [] // Предложения
+	  .match(/.*?[.!?](?=\s*[A-Z]|$)/g) || [] // Предложения
 
 	const validSentences = sentences
 	  .map(sentence => sentence.trim())
@@ -205,6 +205,7 @@ function setup() {
 }
 
 function draw() {
+    background(255);
   if (!modelLoaded || !phrasesGenerated || !webcamLoaded) {
     drawLoadingScreen();
     return;
