@@ -134,15 +134,17 @@ async function generatePoeticPhrases() {
     const sentences = text
       .replace(/\n+/g, ' ') // Абзацы
 			.match(/.*?[.!?](?=\s*[A-Z]|$)/g) || [] // Предложения
-      .map(sentence => sentence.trim())
-      .filter(sentence => sentence.length > 10 && sentence.length < 250);
 
-    if (sentences.length > 0) {
-      phrases.push(...sentences);
+	const validSentences = sentences
+	  .map(sentence => sentence.trim())
+	  .filter(sentence => sentence.length > 10 && sentence.length <= 200);
+
+    if (validSentences.length > 0) {
+      phrases.push(...validSentences);
       phrasesGenerated = true;
-      console.log("AI phrases loaded:", sentences);
+      console.log("AI phrases loaded.");
     } else {
-      console.warn("API returned no phrases, using fallback.");
+      console.warn("API returned no valid phrases, using fallback.");
       addFallbackPhrases();
     }
   } catch (err) {
